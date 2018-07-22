@@ -10,3 +10,7 @@
 # Amdahl's Law
  ![Imgur](https://i.imgur.com/d4JOD0L.jpg)
  ![wiki](https://wikimedia.org/api/rest_v1/media/math/render/svg/4ddfe7ea1f14ac8da03a6eda65459d1f8d85f6b9)
+- where (used data from wikipedia https://en.wikipedia.org/wiki/Amdahl%27s_law)
+- S latency is the theoretical speedup of the execution of the whole task;
+- s is the speedup of the part of the task that benefits from improved system resources;
+- p is the proportion of execution time that the part benefiting from improved resources originally occupied.
