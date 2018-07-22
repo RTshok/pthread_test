@@ -2,6 +2,7 @@
 
 #include<stdio.h>
 #include<stdlib.h>
+#include<string.h>
 #include<pthread.h>
 #include <unistd.h>
 #include <sched.h>
@@ -86,18 +87,22 @@ void *threadfunc(void *args){
 
 int main (int argc,char*argv[]){
 int num_threads = 0;
-long long arr_size = 0;
+int numofarrays = 11;
+char name_of_file[20];
+long int arraysize[] = {5000,10000,25000,50000,100000,250000,500000,1000000,2500000,5000000,10000000};
 
-if(argc > 2){
+if(argc > 1){
 num_threads = atoi(argv[1]);
-arr_size = atoll(argv[2]);
 }
+if(argc == 3)
+strcpy(name_of_file,argv[2]);
 if(argc>3){
 printf("too much arg \n");
 return 1;
 }
-;
-FILE *fp_rand = fopen("/dev/random", "rb");
+
+FILE *fp_rand,*file;
+	fp_rand = fopen("/dev/random", "rb");
 	unsigned int seed;
 	fread(&seed, sizeof(seed), 1, fp_rand);
 	/*if (ferror(fp_rand)) {
@@ -105,14 +110,8 @@ FILE *fp_rand = fopen("/dev/random", "rb");
 		
 	}*/
 	srand(seed);
-long int*array = malloc(arr_size * sizeof *array);
-	for (long long i = 0; i < arr_size; i++){
-		array[i] =rand();
-		//printf("%ld\n",array[i]);
-}
 
-
-	pthread_t threads[num_threads];
+pthread_t threads[num_threads];
 	struct thread_data th_dat[num_threads];
 
 	pthread_attr_t thread_attrs;
@@ -131,17 +130,28 @@ long int*array = malloc(arr_size * sizeof *array);
 
 cpu_set_t cpuset = all_cores();
 	int ret = pthread_attr_setaffinity_np(&thread_attrs, sizeof(cpu_set_t), &cpuset);
-	if (ret!=0)
+	if (ret!=0){
 	printf("error with setaffinity\n");
-
+	return -1;
+	}
 pthread_mutex_t sharedlock;
 	pthread_mutex_init(&sharedlock, NULL);
+file = fopen(name_of_file,"w");
+fprintf(file,"#AmountOfElements,N		#TimeOfCalculation,ms");
+/*Starting the calculations */
+for (int j = 0;j<numofarrays;j++){
 
+long int*array = malloc(arraysize[j] * sizeof *array);
+	for (long long i = 0; i < arraysize[j]; i++){
+		array[i] =rand();
+		//printf("%ld\n",array[i]);
+	}
+	
 	//long int result = 0;
 	struct timespec time_now, time_after;
-	clock_gettime(CLOCK_REALTIME, &time_now);
+	//clock_gettime(CLOCK_REALTIME, &time_now);
 	for (int i = 0; i < num_threads; i++) {
-		long long slice = arr_size / num_threads;
+		long long slice = arraysize[j] / num_threads;
 		th_dat[i].arrptr = &(array[i * slice]);	/* Points to start of array slice */
 		th_dat[i].num_items = slice;		/* Elements in slice */
 		//th_dat[i].resptr = &result;		/* Pointer to result(shared) */
@@ -152,7 +162,7 @@ pthread_mutex_t sharedlock;
 for (int i = 0; i < num_threads; i++)
 		pthread_join(threads[i], NULL);
 
-clock_gettime(CLOCK_REALTIME, &time_after);
+//clock_gettime(CLOCK_REALTIME, &time_after);
 	double took_global = timespec_diff(&time_after, &time_now);
 	double took_avg = 0.;
 	for (int i = 0; i < num_threads; i++) {
@@ -161,12 +171,16 @@ clock_gettime(CLOCK_REALTIME, &time_after);
 	}
 	took_avg = took_avg/num_threads;
 
-printf("Numbers: %lld\nThreads: %d\n"
-	       "Average thread time, ms: %g\nCalculation took, ms: %g\n", 
-	       arr_size, num_threads, took_avg, took_global);
+printf("Numbers: %ld\nThreads: %d\n"
+	       "Calculation took, ms: %g\n",
+	       arraysize[j], num_threads, took_avg);
+	fprintf(file,"\n%ld					%g",arraysize[j],took_avg);
 	
-	pthread_mutex_destroy(&sharedlock);
 	free(array);
-	fclose(fp_rand);
+	
 
+}
+pthread_mutex_destroy(&sharedlock);
+fclose(fp_rand);
+fclose(file);
 }
