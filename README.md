@@ -1,2 +1,2 @@
 # pthread_test
-![alt text](https://imgur.com/a/zTZ1QQP)
+![Imgur](https://i.imgur.com/DPPbweS.png)
